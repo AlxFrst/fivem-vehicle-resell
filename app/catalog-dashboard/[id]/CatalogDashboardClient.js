@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -41,145 +41,161 @@ export default function CatalogDashboardClient({
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">Dashboard du catalogue: {catalog.name}</h1>
+        <div className="container mx-auto px-4 py-8 bg-white text-black">
+            <h1 className="text-4xl font-bold mb-8 text-center">{catalog.name}</h1>
 
-            {/* Statistiques */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Statistiques */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Total des véhicules</CardTitle>
+                        <CardTitle>Statistiques</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-4xl font-bold">{totalVehicles}</p>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="text-center">
+                                <p className="text-3xl font-bold">{totalVehicles}</p>
+                                <p className="text-sm text-gray-500">Total</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-3xl font-bold">{soldVehicles}</p>
+                                <p className="text-sm text-gray-500">Vendus</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-3xl font-bold">{totalVehicles > 0 ? Math.round((soldVehicles / totalVehicles) * 100) : 0}%</p>
+                                <p className="text-sm text-gray-500">Taux</p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
+
+                {/* Lien du catalogue */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Véhicules vendus</CardTitle>
+                        <CardTitle>Lien du catalogue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-4xl font-bold">{soldVehicles}</p>
+                        <div className="flex items-center space-x-2">
+                            <Input
+                                type="text"
+                                value={`${window.location.origin}/catalog/${catalog.id}`}
+                                readOnly
+                                className="flex-grow"
+                            />
+                            <Button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/catalog/${catalog.id}`)}>
+                                Copier
+                            </Button>
+                            {/* button Go to catalog */}
+                            <Button onClick={() => window.location.href = `/catalog/${catalog.id}`}>
+                                Accéder au catalogue
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
+
+                {/* Informations du catalogue */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Taux de vente</CardTitle>
+                        <CardTitle>Informations</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-4xl font-bold">{totalVehicles > 0 ? Math.round((soldVehicles / totalVehicles) * 100) : 0}%</p>
+                        {isEditingCatalog ? (
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                updateCatalog(new FormData(e.target));
+                                setIsEditingCatalog(false);
+                            }}>
+                                <Input name="name" defaultValue={catalog.name} className="mb-2" placeholder="Nom du catalogue" />
+                                <Input name="serverName" defaultValue={catalog.serverName} className="mb-2" placeholder="Nom du serveur" />
+                                <Textarea name="description" defaultValue={catalog.description} className="mb-2" placeholder="Description" />
+                                <Input name="contactInfo" defaultValue={catalog.contactInfo} className="mb-2" placeholder="Informations de contact" />
+                                <Button type="submit">Sauvegarder</Button>
+                            </form>
+                        ) : (
+                            <div className="space-y-2">
+                                <p><strong>Serveur:</strong> {catalog.serverName}</p>
+                                <p><strong>Description:</strong> {catalog.description}</p>
+                                <p><strong>Contact:</strong> {catalog.contactInfo}</p>
+                                <Button onClick={() => setIsEditingCatalog(true)}>Modifier</Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Catégories */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Catégories</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 gap-2">
+                            {catalog.categories.map(category => (
+                                <Badge key={category.id} className="text-center py-2">{category.name}</Badge>
+                            ))}
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={() => setIsAddingCategory(true)}>Ajouter une catégorie</Button>
+                    </CardFooter>
+                </Card>
+
+                {/* Actions rapides */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Actions rapides</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col space-y-2">
+                        <Button onClick={() => setIsAddingVehicle(true)}>Ajouter un véhicule</Button>
+                        <Button variant="outline">Exporter les données</Button>
+                    </CardContent>
+                </Card>
+
+                {/* Liste des véhicules */}
+                <Card className="col-span-full">
+                    <CardHeader>
+                        <CardTitle>Véhicules</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Marque</TableHead>
+                                    <TableHead>Modèle</TableHead>
+                                    <TableHead>Prix</TableHead>
+                                    <TableHead>Statut</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {catalog.categories.flatMap(category =>
+                                    category.vehicles.map(vehicle => (
+                                        <TableRow key={vehicle.id}>
+                                            <TableCell>{vehicle.brand}</TableCell>
+                                            <TableCell>{vehicle.model}</TableCell>
+                                            <TableCell>{vehicle.price}€</TableCell>
+                                            <TableCell>
+                                                <Badge variant={vehicle.status === 'sold' ? "secondary" : "default"}>
+                                                    {vehicle.status === 'sold' ? "Vendu" : "Disponible"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {vehicle.status === 'available' ? (
+                                                    <Button onClick={() => handleSellVehicle(vehicle)} size="sm">
+                                                        Vendre
+                                                    </Button>
+                                                ) : (
+                                                    <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline">
+                                                        Rendre disponible
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Informations du catalogue */}
-            <Card className="mb-8">
-                <CardHeader>
-                    <CardTitle>Informations du catalogue</CardTitle>
-                    <CardDescription>Gérez les détails de votre catalogue</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isEditingCatalog ? (
-                        <form onSubmit={(e) => {
-                            e.preventDefault();
-                            updateCatalog(new FormData(e.target));
-                            setIsEditingCatalog(false);
-                        }}>
-                            <Input name="name" defaultValue={catalog.name} className="mb-2" placeholder="Nom du catalogue" />
-                            <Input name="serverName" defaultValue={catalog.serverName} className="mb-2" placeholder="Nom du serveur" />
-                            <Textarea name="description" defaultValue={catalog.description} className="mb-2" placeholder="Description" />
-                            <Input name="contactInfo" defaultValue={catalog.contactInfo} className="mb-2" placeholder="Informations de contact" />
-                            <Button type="submit">Sauvegarder</Button>
-                        </form>
-                    ) : (
-                        <div>
-                            <p><strong>Nom du serveur:</strong> {catalog.serverName}</p>
-                            <p><strong>Description:</strong> {catalog.description}</p>
-                            <p><strong>Contact:</strong> {catalog.contactInfo}</p>
-                            <Button onClick={() => setIsEditingCatalog(true)} className="mt-2">Modifier</Button>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Gestion des catégories */}
-            <Card className="mb-8">
-                <CardHeader>
-                    <CardTitle>Catégories</CardTitle>
-                    <CardDescription>Gérez les catégories de véhicules</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={() => setIsAddingCategory(true)}>Ajouter une catégorie</Button>
-                    <div className="mt-4">
-                        {catalog.categories.map(category => (
-                            <div key={category.id} className="flex items-center mb-2">
-                                <Badge className="mr-2">{category.name}</Badge>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Liste des véhicules */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Véhicules</CardTitle>
-                    <CardDescription>Gérez vos véhicules</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={() => setIsAddingVehicle(true)} className="mb-4">Ajouter un véhicule</Button>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Marque</TableHead>
-                                <TableHead>Modèle</TableHead>
-                                <TableHead>Prix</TableHead>
-                                <TableHead>Kilométrage</TableHead>
-                                <TableHead>Catégorie</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {catalog.categories.flatMap(category =>
-                                category.vehicles.map(vehicle => (
-                                    <TableRow key={vehicle.id}>
-                                        <TableCell>{vehicle.brand}</TableCell>
-                                        <TableCell>{vehicle.model}</TableCell>
-                                        <TableCell>{vehicle.price}€</TableCell>
-                                        <TableCell>{vehicle.mileage} km</TableCell>
-                                        <TableCell>{category.name}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={vehicle.status === 'sold' ? "secondary" : "default"}>
-                                                {vehicle.status === 'sold' ? "Vendu" : "Disponible"}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {vehicle.status === 'available' ? (
-                                                <>
-                                                    <Button onClick={() => handleSellVehicle(vehicle)} size="sm" className="mr-2">
-                                                        Marquer comme vendu
-                                                    </Button>
-                                                    <Button onClick={() => deleteVehicle(vehicle.id)} size="sm" variant="destructive">
-                                                        Supprimer
-                                                    </Button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p className="text-sm">Vendu à: {vehicle.buyerName}</p>
-                                                    <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline" className="mt-2">
-                                                        Rendre disponible
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
 
             {/* Modal pour ajouter une catégorie */}
             <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useRouter } from 'next/navigation';
 import { createCatalog, editCatalog, deleteCatalog } from './actions';
 
+
 function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
     const [newName, setNewName] = useState(catalog?.name || "");
 
@@ -26,18 +27,19 @@ function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
+            <DialogContent className="bg-white">
                 <DialogHeader>
-                    <DialogTitle>Éditer le catalogue</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold">Éditer le catalogue</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
                     <Input
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
                         placeholder="Nouveau nom du catalogue"
+                        className="mb-4"
                     />
                     <DialogFooter>
-                        <Button type="submit">Sauvegarder</Button>
+                        <Button type="submit" className="bg-black text-white hover:bg-gray-800">Sauvegarder</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -48,7 +50,8 @@ function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
 export default function ManageCatalogsClient({ initialCatalogs }) {
     const [catalogs, setCatalogs] = useState([]);
     const [editingCatalog, setEditingCatalog] = useState(null);
-    const router = useRouter();
+    const router = useRouter(); // Ajoutez cette ligne
+
 
     useEffect(() => {
         setCatalogs(initialCatalogs);
@@ -73,101 +76,106 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">Gestion des Catalogues</h1>
+        <div className="bg-white text-black min-h-screen">
+            <div className="container mx-auto px-4 py-12">
+                <h1 className="text-4xl font-bold mb-12">Gestion des Catalogues</h1>
 
-            <section className="mb-12">
-                <h2 className="text-2xl font-semibold mb-4">Créer un nouveau catalogue</h2>
-                <Card>
-                    <CardContent className="pt-6">
-                        <form action={createCatalog}>
-                            <div className="flex gap-4">
-                                <Input name="name" placeholder="Nom du catalogue" className="flex-grow" />
-                                <Button type="submit">Créer</Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-            </section>
+                <section className="mb-16">
+                    <h2 className="text-2xl font-semibold mb-6">Créer un nouveau catalogue</h2>
+                    <Card className="border-none shadow-lg">
+                        <CardContent className="pt-6">
+                            <form action={createCatalog}>
+                                <div className="flex gap-4">
+                                    <Input name="name" placeholder="Nom du catalogue" className="flex-grow" />
+                                    <Button type="submit" className="bg-black text-white hover:bg-gray-800">Créer</Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                    </Card>
+                </section>
 
-            <section>
-                <h2 className="text-2xl font-semibold mb-4">Vos catalogues</h2>
-                <Card>
-                    <CardContent>
-                        {catalogs.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Nom du catalogue</TableHead>
-                                        <TableHead>Nombre de véhicules</TableHead>
-                                        <TableHead>Date de création</TableHead>
-                                        <TableHead>Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {catalogs.map((catalog) => (
-                                        <TableRow key={catalog.id}>
-                                            <TableCell>{catalog.name}</TableCell>
-                                            <TableCell>-</TableCell>
-                                            <TableCell>{new Date(catalog.createdAt).toLocaleDateString()}</TableCell>
-                                            <TableCell>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="mr-2"
-                                                    onClick={() => router.push(`/catalog-dashboard/${catalog.id}`)}
-                                                >
-                                                    Voir le dashboard
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="mr-2"
-                                                    onClick={() => setEditingCatalog(catalog)}
-                                                >
-                                                    Éditer
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(catalog.id)}
-                                                >
-                                                    Supprimer
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <p>Aucun catalogue trouvé.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </section>
+                <section className="mb-16">
+                    <h2 className="text-2xl font-semibold mb-6">Vos catalogues</h2>
+                    <Card className="border-none shadow-lg overflow-hidden">
+                        <CardContent className="p-0">
+                            {catalogs.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead className="font-semibold">Nom du catalogue</TableHead>
+                                                <TableHead className="font-semibold">Nombre de véhicules</TableHead>
+                                                <TableHead className="font-semibold">Date de création</TableHead>
+                                                <TableHead className="font-semibold">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {catalogs.map((catalog) => (
+                                                <TableRow key={catalog.id}>
+                                                    <TableCell className="font-medium">{catalog.name}</TableCell>
+                                                    <TableCell>-</TableCell>
+                                                    <TableCell>{new Date(catalog.createdAt).toLocaleDateString()}</TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="mr-2 bg-gray-100 hover:bg-gray-200"
+                                                            onClick={() => router.push(`/catalog-dashboard/${catalog.id}`)}
+                                                        >
+                                                            Voir le dashboard
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="mr-2 bg-gray-100 hover:bg-gray-200"
+                                                            onClick={() => setEditingCatalog(catalog)}
+                                                        >
+                                                            Éditer
+                                                        </Button>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="bg-red-500 hover:bg-red-600 text-white"
+                                                            onClick={() => handleDelete(catalog.id)}
+                                                        >
+                                                            Supprimer
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                <p className="p-6 text-center text-gray-500">Aucun catalogue trouvé.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </section>
 
-            <section className="mt-12">
-                <Card className="bg-primary text-primary-foreground">
-                    <CardHeader>
-                        <CardTitle>Besoin d'aide pour gérer vos catalogues ?</CardTitle>
-                        <CardDescription className="text-primary-foreground/80">
-                            Consultez notre guide détaillé ou contactez notre support.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button variant="secondary">Voir le guide</Button>
-                    </CardContent>
-                </Card>
-            </section>
+                <section>
+                    <Card className="border-none shadow-lg bg-gray-50">
+                        <CardHeader>
+                            <CardTitle className="text-2xl font-semibold">Besoin d'aide pour gérer vos catalogues ?</CardTitle>
+                            <CardDescription className="text-gray-600">
+                                Consultez notre guide détaillé ou contactez notre support.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button className="bg-black text-white hover:bg-gray-800">Voir le guide</Button>
+                        </CardContent>
+                    </Card>
+                </section>
 
-            {editingCatalog && (
-                <EditCatalogDialog
-                    catalog={editingCatalog}
-                    isOpen={!!editingCatalog}
-                    onClose={() => setEditingCatalog(null)}
-                    onEdit={handleEdit}
-                />
-            )}
+                {editingCatalog && (
+                    <EditCatalogDialog
+                        catalog={editingCatalog}
+                        isOpen={!!editingCatalog}
+                        onClose={() => setEditingCatalog(null)}
+                        onEdit={handleEdit}
+                    />
+                )}
+            </div>
         </div>
     );
 }
