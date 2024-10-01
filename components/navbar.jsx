@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { LogOut } from 'lucide-react';
+import { LogOut, LogIn } from 'lucide-react';
 
 export default function Navbar({ session }) {
   const isLoggedIn = !!session;
@@ -14,20 +14,29 @@ export default function Navbar({ session }) {
               CarVentory
             </Link>
           </div>
-          {isLoggedIn && (
-            <div className="flex items-center space-x-4">
-              <Link href="/manage-catalogs">
+          <div className="flex items-center space-x-4">
+            {isLoggedIn ? (
+              <>
+                <Link href="/manage-catalogs">
+                  <Button className="bg-black text-white hover:bg-gray-800">
+                    Gérer
+                  </Button>
+                </Link>
+                <Link href="/api/auth/signout">
+                  <Button variant="ghost" size="icon">
+                    <LogOut className="h-5 w-5 text-gray-600 hover:text-black" />
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <Link href="/api/auth/signin">
                 <Button className="bg-black text-white hover:bg-gray-800">
-                  Gérer
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Connexion
                 </Button>
               </Link>
-              <Link href="/api/auth/signout">
-                <Button variant="ghost" size="icon">
-                  <LogOut className="h-5 w-5 text-gray-600 hover:text-black" />
-                </Button>
-              </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>
