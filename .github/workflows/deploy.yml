@@ -1,0 +1,34 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main  # La branche que tu souhaites surveiller
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Vérification du code de la branche
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configuration de Node.js pour Next.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Assurez-vous de spécifier la version Node.js correcte
+
+      # Installation des dépendances
+      - name: Install dependencies
+        run: npm install
+
+      # Déploiement à Vercel (ou à un autre service de déploiement que tu utilises)
+      - name: Deploy to Vercel
+        run: npx vercel --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # Le token d'authentification Vercel
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }} # L'organisation Vercel
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }} # Le projet Vercel
+
