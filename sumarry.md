@@ -1,4 +1,4 @@
-# Plateforme de Gestion de Catalogues pour Concessionnaires FiveM !
+# Plateforme de Gestion de Catalogues pour Concessionnaires FiveM
 
 ## Contexte et Objectif
 Le projet vise à développer une plateforme web destinée aux concessionnaires de serveurs FiveM, permettant la gestion de catalogues de véhicules à vendre, accessible au public. Ce projet utilise Next.js (App Router), Prisma, Auth.js, et Shadcn pour fournir une solution complète de gestion d'inventaire, de catégories de véhicules, de pré-réservations, et de gestion des ventes.
