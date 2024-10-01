@@ -3,7 +3,8 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { auth } from "@/lib/auth";
 import Footer from "@/components/footer";
-import { Analytics } from "@vercel/analytics/react"
+import { Analytics } from "@vercel/analytics/react";
+import { FloatingBugButton } from "@/components/FloatingBugButton";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,6 +33,7 @@ export default async function RootLayout({ children }) {
         <Navbar session={session} />
         {children}
         <Footer />
+        {session && session.user && <FloatingBugButton />}
       </body>
     </html>
   );
