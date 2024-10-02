@@ -101,12 +101,13 @@ export default function CatalogClient({ catalog }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {currentVehicles.map(vehicle => (
                     <Card key={vehicle.id} className={`overflow-hidden ${vehicle.status === 'sold' ? 'opacity-70' : ''}`}>
-                        <div className="relative h-48">
+                        <div className="relative aspect-[16/9] overflow-hidden">
                             <Image
                                 src={`data:image/jpeg;base64,${Buffer.from(vehicle.image).toString('base64')}`}
                                 alt={`${vehicle.brand} ${vehicle.model}`}
                                 layout="fill"
                                 objectFit="cover"
+                                className="transition-all duration-300 hover:scale-105"
                             />
                             {vehicle.status === 'sold' && (
                                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -126,9 +127,9 @@ export default function CatalogClient({ catalog }) {
                                     {vehicle.status === 'sold' ? "Vendu" : "Disponible"}
                                 </Badge>
                             </div>
-                            {vehicle.status !== 'sold' && (
+                            {/* {vehicle.status !== 'sold' && (
                                 <Button className="w-full mt-4" onClick={() => handleReserve(vehicle)}>Réserver (en dev)</Button>
-                            )}
+                            )} */}
                         </CardContent>
                     </Card>
                 ))}

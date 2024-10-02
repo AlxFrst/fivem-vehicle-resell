@@ -8,7 +8,8 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useRouter } from 'next/navigation';
 import { createCatalog, editCatalog, deleteCatalog } from './actions';
-
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster"
 
 function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
     const [newName, setNewName] = useState(catalog?.name || "");
@@ -48,14 +49,38 @@ function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
 }
 
 export default function ManageCatalogsClient({ initialCatalogs }) {
-    const [catalogs, setCatalogs] = useState([]);
+    const [catalogs, setCatalogs] = useState(initialCatalogs);
     const [editingCatalog, setEditingCatalog] = useState(null);
-    const router = useRouter(); // Ajoutez cette ligne
-
+    const [newCatalogName, setNewCatalogName] = useState("");
+    const router = useRouter();
+    const { toast } = useToast();
 
     useEffect(() => {
         setCatalogs(initialCatalogs);
     }, [initialCatalogs]);
+
+    const handleCreateCatalog = async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append("name", newCatalogName);
+        await createCatalog(formData);
+
+        const newCatalog = {
+            id: Date.now().toString(),
+            name: newCatalogName,
+            createdAt: new Date().toISOString(),
+        };
+
+        setCatalogs(prevCatalogs => [newCatalog, ...prevCatalogs]);
+        setNewCatalogName("");
+        router.refresh();
+
+        toast({
+            title: "Catalogue créé",
+            description: `Le catalogue "${newCatalogName}" a été créé avec succès.`,
+            duration: 3000,
+        });
+    };
 
     const handleEdit = async (catalogId, newName) => {
         await editCatalog(catalogId, newName);
@@ -84,9 +109,15 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                     <h2 className="text-2xl font-semibold mb-6">Créer un nouveau catalogue</h2>
                     <Card className="border-none shadow-lg">
                         <CardContent className="pt-6">
-                            <form action={createCatalog}>
+                            <form onSubmit={handleCreateCatalog}>
                                 <div className="flex gap-4">
-                                    <Input name="name" placeholder="Nom du catalogue" className="flex-grow" />
+                                    <Input
+                                        name="name"
+                                        placeholder="Nom du catalogue"
+                                        className="flex-grow"
+                                        value={newCatalogName}
+                                        onChange={(e) => setNewCatalogName(e.target.value)}
+                                    />
                                     <Button type="submit" className="bg-black text-white hover:bg-gray-800">Créer</Button>
                                 </div>
                             </form>
@@ -104,7 +135,6 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead className="font-semibold">Nom du catalogue</TableHead>
-                                                <TableHead className="font-semibold">Nombre de véhicules</TableHead>
                                                 <TableHead className="font-semibold">Date de création</TableHead>
                                                 <TableHead className="font-semibold">Actions</TableHead>
                                             </TableRow>
@@ -113,7 +143,6 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                                             {catalogs.map((catalog) => (
                                                 <TableRow key={catalog.id}>
                                                     <TableCell className="font-medium">{catalog.name}</TableCell>
-                                                    <TableCell>-</TableCell>
                                                     <TableCell>{new Date(catalog.createdAt).toLocaleDateString()}</TableCell>
                                                     <TableCell>
                                                         <Button
@@ -176,6 +205,7 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                     />
                 )}
             </div>
+            <Toaster />
         </div>
     );
 }
