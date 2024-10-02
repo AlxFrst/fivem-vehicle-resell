@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1290770618488197261/9N9OqTWHoSrlO0XADpGyvZ9Wvb4VmUf0A4mFqpasiqDgeoMZHCxh-3WiM2Au4L3y2BW-'
+const DISCORD_WEBHOOK_URL = env.DISCORD_WEBHOOK_URL;
 
 export async function sendBugReport({ title, description, bugType }) {
     const session = await auth();
