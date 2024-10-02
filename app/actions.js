@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 
-const DISCORD_WEBHOOK_URL = env.DISCORD_WEBHOOK_URL;
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
 export async function sendBugReport({ title, description, bugType }) {
     const session = await auth();
