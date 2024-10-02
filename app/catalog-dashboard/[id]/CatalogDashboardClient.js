@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CatalogDashboardClient({
     catalog,
@@ -36,6 +37,11 @@ export default function CatalogDashboardClient({
     const soldVehicles = allVehicles.filter(v => v.status === 'sold');
 
     const totalVehicles = allVehicles.length;
+    const totalStockValue = availableVehicles.reduce((sum, vehicle) => sum + vehicle.price, 0);
+    const totalSalesValue = soldVehicles.reduce((sum, vehicle) => sum + vehicle.price, 0);
+    const mostExpensiveVehicle = availableVehicles.reduce((max, vehicle) => vehicle.price > max.price ? vehicle : max, availableVehicles[0]);
+    const leastExpensiveVehicle = availableVehicles.reduce((min, vehicle) => vehicle.price < min.price ? vehicle : min, availableVehicles[0]);
+    const averageSoldPrice = soldVehicles.length > 0 ? totalSalesValue / soldVehicles.length : 0;
 
     useEffect(() => {
         setCatalogUrl(`${window.location.origin}/catalog/${catalog.id}`);
@@ -58,54 +64,43 @@ export default function CatalogDashboardClient({
             <h1 className="text-4xl font-bold mb-8 text-center">{catalog.name}</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Statistiques */}
-                <Card>
+                {/* Statistiques générales */}
+                <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>Statistiques</CardTitle>
+                        <CardTitle>Statistiques générales</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                             <div className="text-center">
                                 <p className="text-3xl font-bold">{totalVehicles}</p>
-                                <p className="text-sm text-gray-500">Total</p>
+                                <p className="text-sm text-gray-500">Total véhicules</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-3xl font-bold">{availableVehicles.length}</p>
+                                <p className="text-sm text-gray-500">Disponibles</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-3xl font-bold">{soldVehicles.length}</p>
                                 <p className="text-sm text-gray-500">Vendus</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-3xl font-bold">{totalVehicles > 0 ? Math.round((soldVehicles.length / totalVehicles) * 100) : 0}%</p>
-                                <p className="text-sm text-gray-500">Taux</p>
+                                <p className="text-3xl font-bold">{totalStockValue.toLocaleString()}€</p>
+                                <p className="text-sm text-gray-500">Valeur du stock</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-3xl font-bold">{totalSalesValue.toLocaleString()}€</p>
+                                <p className="text-sm text-gray-500">Valeur des ventes</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-3xl font-bold">{averageSoldPrice.toLocaleString()}€</p>
+                                <p className="text-sm text-gray-500">Prix moyen de vente</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Lien du catalogue */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Lien du catalogue</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center space-x-2">
-                            <Input
-                                type="text"
-                                value={catalogUrl}
-                                readOnly
-                                className="flex-grow"
-                            />
-                            <Button onClick={() => navigator.clipboard.writeText(catalogUrl)}>
-                                Copier
-                            </Button>
-                            <Button onClick={() => window.location.href = catalogUrl}>
-                                Accéder au catalogue
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
                 {/* Informations du catalogue */}
-                <Card>
+                <Card className="col-span-2">
                     <CardHeader>
                         <CardTitle>Informations du catalogue</CardTitle>
                     </CardHeader>
@@ -133,10 +128,34 @@ export default function CatalogDashboardClient({
                     </CardContent>
                 </Card>
 
+                {/* Lien du catalogue */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Lien du catalogue</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col space-y-2">
+                            <Input
+                                type="text"
+                                value={catalogUrl}
+                                readOnly
+                            />
+                            <div className="flex space-x-2">
+                                <Button onClick={() => navigator.clipboard.writeText(catalogUrl)} className="flex-1">
+                                    Copier
+                                </Button>
+                                <Button onClick={() => window.open(catalogUrl, '_blank')} className="flex-1">
+                                    Accéder
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Catégories */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Catégories disponibles</CardTitle>
+                        <CardTitle>Catégories</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-2">
@@ -155,12 +174,13 @@ export default function CatalogDashboardClient({
                                             </Badge>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>Cliquez pour supprimer la catégorie</p>
+                                            <p>Cliquez pour supprimer</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             ))}
                         </div>
+                        <Button onClick={() => setIsAddingCategory(true)} className="mt-4 w-full">Ajouter une catégorie</Button>
                     </CardContent>
                 </Card>
 
@@ -170,77 +190,77 @@ export default function CatalogDashboardClient({
                         <CardTitle>Actions rapides</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col space-y-2">
-                        <Button onClick={() => setIsAddingCategory(true)}>Ajouter une catégorie</Button>
                         <Button onClick={() => setIsAddingVehicle(true)}>Ajouter un véhicule</Button>
-                        <Button variant="outline">Exporter les données ( En développement )</Button>
+                        <Button variant="outline">Exporter les données</Button>
                     </CardContent>
                 </Card>
 
-                {/* Liste des véhicules disponibles */}
+                {/* Liste des véhicules */}
                 <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>Véhicules Disponibles</CardTitle>
+                        <CardTitle>Liste des véhicules</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Marque</TableHead>
-                                    <TableHead>Modèle</TableHead>
-                                    <TableHead>Prix</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {availableVehicles.map(vehicle => (
-                                    <TableRow key={vehicle.id}>
-                                        <TableCell>{vehicle.brand}</TableCell>
-                                        <TableCell>{vehicle.model}</TableCell>
-                                        <TableCell>{vehicle.price}€</TableCell>
-                                        <TableCell>
-                                            <Button onClick={() => handleSellVehicle(vehicle)} size="sm">
-                                                Vendre
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-
-                {/* Liste des véhicules vendus */}
-                <Card className="col-span-full">
-                    <CardHeader>
-                        <CardTitle>Véhicules Vendus</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Marque</TableHead>
-                                    <TableHead>Modèle</TableHead>
-                                    <TableHead>Prix</TableHead>
-                                    <TableHead>Acheteur</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {soldVehicles.map(vehicle => (
-                                    <TableRow key={vehicle.id}>
-                                        <TableCell>{vehicle.brand}</TableCell>
-                                        <TableCell>{vehicle.model}</TableCell>
-                                        <TableCell>{vehicle.price}€</TableCell>
-                                        <TableCell>{vehicle.buyerName}</TableCell>
-                                        <TableCell>
-                                            <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline">
-                                                Rendre disponible
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <Tabs defaultValue="available">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="available">Disponibles</TabsTrigger>
+                                <TabsTrigger value="sold">Vendus</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="available">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Marque</TableHead>
+                                            <TableHead>Modèle</TableHead>
+                                            <TableHead>Prix</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {availableVehicles.map(vehicle => (
+                                            <TableRow key={vehicle.id}>
+                                                <TableCell>{vehicle.brand}</TableCell>
+                                                <TableCell>{vehicle.model}</TableCell>
+                                                <TableCell>{vehicle.price}€</TableCell>
+                                                <TableCell>
+                                                    <Button onClick={() => handleSellVehicle(vehicle)} size="sm">
+                                                        Vendre
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TabsContent>
+                            <TabsContent value="sold">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Marque</TableHead>
+                                            <TableHead>Modèle</TableHead>
+                                            <TableHead>Prix</TableHead>
+                                            <TableHead>Acheteur</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {soldVehicles.map(vehicle => (
+                                            <TableRow key={vehicle.id}>
+                                                <TableCell>{vehicle.brand}</TableCell>
+                                                <TableCell>{vehicle.model}</TableCell>
+                                                <TableCell>{vehicle.price}€</TableCell>
+                                                <TableCell>{vehicle.buyerName}</TableCell>
+                                                <TableCell>
+                                                    <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline">
+                                                        Rendre disponible
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TabsContent>
+                        </Tabs>
                     </CardContent>
                 </Card>
             </div>
@@ -264,7 +284,7 @@ export default function CatalogDashboardClient({
                 </DialogContent>
             </Dialog>
 
-            {/* Modal pour ajouter un véhicule (améliorée) */}
+            {/* Modal pour ajouter un véhicule */}
             <Dialog open={isAddingVehicle} onOpenChange={setIsAddingVehicle}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
