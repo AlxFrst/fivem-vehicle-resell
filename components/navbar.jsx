@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { LogOut, LogIn } from 'lucide-react';
 
 export default function Navbar({ session }) {
   const isLoggedIn = !!session;
+  const userImage = session?.user?.image;
 
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm">
@@ -22,6 +24,15 @@ export default function Navbar({ session }) {
                     Gérer
                   </Button>
                 </Link>
+                {userImage && (
+                  <Image
+                    src={userImage}
+                    alt="Profile"
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                  />
+                )}
                 <Link href="/api/auth/signout">
                   <Button variant="ghost" size="icon">
                     <LogOut className="h-5 w-5 text-gray-600 hover:text-black" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function CatalogDashboardClient({
     catalog,
@@ -24,9 +27,19 @@ export default function CatalogDashboardClient({
     const [isAddingVehicle, setIsAddingVehicle] = useState(false);
     const [isSellingVehicle, setIsSellingVehicle] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
+    const [isDeletingCategory, setIsDeletingCategory] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [catalogUrl, setCatalogUrl] = useState('');
 
-    const totalVehicles = catalog.categories.reduce((acc, category) => acc + category.vehicles.length, 0);
-    const soldVehicles = catalog.categories.reduce((acc, category) => acc + category.vehicles.filter(v => v.status === 'sold').length, 0);
+    const allVehicles = catalog.categories.flatMap(category => category.vehicles);
+    const availableVehicles = allVehicles.filter(v => v.status === 'available');
+    const soldVehicles = allVehicles.filter(v => v.status === 'sold');
+
+    const totalVehicles = allVehicles.length;
+
+    useEffect(() => {
+        setCatalogUrl(`${window.location.origin}/catalog/${catalog.id}`);
+    }, [catalog.id]);
 
     const handleSellVehicle = (vehicle) => {
         setSelectedVehicle(vehicle);
@@ -57,11 +70,11 @@ export default function CatalogDashboardClient({
                                 <p className="text-sm text-gray-500">Total</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-3xl font-bold">{soldVehicles}</p>
+                                <p className="text-3xl font-bold">{soldVehicles.length}</p>
                                 <p className="text-sm text-gray-500">Vendus</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-3xl font-bold">{totalVehicles > 0 ? Math.round((soldVehicles / totalVehicles) * 100) : 0}%</p>
+                                <p className="text-3xl font-bold">{totalVehicles > 0 ? Math.round((soldVehicles.length / totalVehicles) * 100) : 0}%</p>
                                 <p className="text-sm text-gray-500">Taux</p>
                             </div>
                         </div>
@@ -77,15 +90,14 @@ export default function CatalogDashboardClient({
                         <div className="flex items-center space-x-2">
                             <Input
                                 type="text"
-                                value={`${window.location.origin}/catalog/${catalog.id}`}
+                                value={catalogUrl}
                                 readOnly
                                 className="flex-grow"
                             />
-                            <Button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/catalog/${catalog.id}`)}>
+                            <Button onClick={() => navigator.clipboard.writeText(catalogUrl)}>
                                 Copier
                             </Button>
-                            {/* button Go to catalog */}
-                            <Button onClick={() => window.location.href = `/catalog/${catalog.id}`}>
+                            <Button onClick={() => window.location.href = catalogUrl}>
                                 Accéder au catalogue
                             </Button>
                         </div>
@@ -95,7 +107,7 @@ export default function CatalogDashboardClient({
                 {/* Informations du catalogue */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Informations</CardTitle>
+                        <CardTitle>Informations du catalogue</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isEditingCatalog ? (
@@ -124,18 +136,32 @@ export default function CatalogDashboardClient({
                 {/* Catégories */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Catégories</CardTitle>
+                        <CardTitle>Catégories disponibles</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-2">
                             {catalog.categories.map(category => (
-                                <Badge key={category.id} className="text-center py-2">{category.name}</Badge>
+                                <TooltipProvider key={category.id}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Badge
+                                                className="text-center py-2 cursor-pointer hover:bg-secondary"
+                                                onClick={() => {
+                                                    setSelectedCategory(category);
+                                                    setIsDeletingCategory(true);
+                                                }}
+                                            >
+                                                {category.name}
+                                            </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Cliquez pour supprimer la catégorie</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             ))}
                         </div>
                     </CardContent>
-                    <CardFooter>
-                        <Button onClick={() => setIsAddingCategory(true)}>Ajouter une catégorie</Button>
-                    </CardFooter>
                 </Card>
 
                 {/* Actions rapides */}
@@ -144,15 +170,16 @@ export default function CatalogDashboardClient({
                         <CardTitle>Actions rapides</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col space-y-2">
+                        <Button onClick={() => setIsAddingCategory(true)}>Ajouter une catégorie</Button>
                         <Button onClick={() => setIsAddingVehicle(true)}>Ajouter un véhicule</Button>
-                        <Button variant="outline">Exporter les données</Button>
+                        <Button variant="outline">Exporter les données ( En développement )</Button>
                     </CardContent>
                 </Card>
 
-                {/* Liste des véhicules */}
+                {/* Liste des véhicules disponibles */}
                 <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>Véhicules</CardTitle>
+                        <CardTitle>Véhicules Disponibles</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -161,36 +188,57 @@ export default function CatalogDashboardClient({
                                     <TableHead>Marque</TableHead>
                                     <TableHead>Modèle</TableHead>
                                     <TableHead>Prix</TableHead>
-                                    <TableHead>Statut</TableHead>
                                     <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {catalog.categories.flatMap(category =>
-                                    category.vehicles.map(vehicle => (
-                                        <TableRow key={vehicle.id}>
-                                            <TableCell>{vehicle.brand}</TableCell>
-                                            <TableCell>{vehicle.model}</TableCell>
-                                            <TableCell>{vehicle.price}€</TableCell>
-                                            <TableCell>
-                                                <Badge variant={vehicle.status === 'sold' ? "secondary" : "default"}>
-                                                    {vehicle.status === 'sold' ? "Vendu" : "Disponible"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {vehicle.status === 'available' ? (
-                                                    <Button onClick={() => handleSellVehicle(vehicle)} size="sm">
-                                                        Vendre
-                                                    </Button>
-                                                ) : (
-                                                    <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline">
-                                                        Rendre disponible
-                                                    </Button>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
+                                {availableVehicles.map(vehicle => (
+                                    <TableRow key={vehicle.id}>
+                                        <TableCell>{vehicle.brand}</TableCell>
+                                        <TableCell>{vehicle.model}</TableCell>
+                                        <TableCell>{vehicle.price}€</TableCell>
+                                        <TableCell>
+                                            <Button onClick={() => handleSellVehicle(vehicle)} size="sm">
+                                                Vendre
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+
+                {/* Liste des véhicules vendus */}
+                <Card className="col-span-full">
+                    <CardHeader>
+                        <CardTitle>Véhicules Vendus</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Marque</TableHead>
+                                    <TableHead>Modèle</TableHead>
+                                    <TableHead>Prix</TableHead>
+                                    <TableHead>Acheteur</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {soldVehicles.map(vehicle => (
+                                    <TableRow key={vehicle.id}>
+                                        <TableCell>{vehicle.brand}</TableCell>
+                                        <TableCell>{vehicle.model}</TableCell>
+                                        <TableCell>{vehicle.price}€</TableCell>
+                                        <TableCell>{vehicle.buyerName}</TableCell>
+                                        <TableCell>
+                                            <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline">
+                                                Rendre disponible
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -216,35 +264,72 @@ export default function CatalogDashboardClient({
                 </DialogContent>
             </Dialog>
 
-            {/* Modal pour ajouter un véhicule */}
+            {/* Modal pour ajouter un véhicule (améliorée) */}
             <Dialog open={isAddingVehicle} onOpenChange={setIsAddingVehicle}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Ajouter un véhicule</DialogTitle>
+                        <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={(e) => {
                         e.preventDefault();
                         addVehicle(new FormData(e.target));
                         setIsAddingVehicle(false);
                     }}>
-                        <Input name="brand" placeholder="Marque" className="mb-2" required />
-                        <Input name="model" placeholder="Modèle" className="mb-2" required />
-                        <Input name="price" type="number" placeholder="Prix" className="mb-2" required />
-                        <Input name="mileage" type="number" placeholder="Kilométrage" className="mb-2" required />
-                        <Textarea name="description" placeholder="Description" className="mb-2" />
-                        <Select name="categoryId" required>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Sélectionnez une catégorie" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {catalog.categories.map(category => (
-                                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Input type="file" name="image" accept="image/*" className="mb-2" />
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="brand" className="text-right">
+                                    Marque
+                                </Label>
+                                <Input id="brand" name="brand" placeholder="Ex: Toyota" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="model" className="text-right">
+                                    Modèle
+                                </Label>
+                                <Input id="model" name="model" placeholder="Ex: Corolla" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="price" className="text-right">
+                                    Prix (€)
+                                </Label>
+                                <Input id="price" name="price" type="number" placeholder="Ex: 15000" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="mileage" className="text-right">
+                                    Kilométrage
+                                </Label>
+                                <Input id="mileage" name="mileage" type="number" placeholder="Ex: 50000" className="col-span-3" required />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="description" className="text-right">
+                                    Description
+                                </Label>
+                                <Textarea id="description" name="description" placeholder="Description du véhicule" className="col-span-3" />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="categoryId" className="text-right">
+                                    Catégorie
+                                </Label>
+                                <Select name="categoryId" required>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Sélectionnez une catégorie" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {catalog.categories.map(category => (
+                                            <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="image" className="text-right">
+                                    Image
+                                </Label>
+                                <Input id="image" name="image" type="file" accept="image/*" className="col-span-3" />
+                            </div>
+                        </div>
                         <DialogFooter>
-                            <Button type="submit">Ajouter</Button>
+                            <Button type="submit">Ajouter le véhicule</Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -262,6 +347,33 @@ export default function CatalogDashboardClient({
                             <Button type="submit">Confirmer la vente</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal pour supprimer une catégorie */}
+            <Dialog open={isDeletingCategory} onOpenChange={setIsDeletingCategory}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Supprimer la catégorie</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-red-500 font-bold">
+                        Attention ! En supprimant cette catégorie, tous les véhicules associés seront également supprimés.
+                    </p>
+                    <p>
+                        Êtes-vous sûr de vouloir supprimer la catégorie "{selectedCategory?.name}" ?
+                    </p>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeletingCategory(false)}>Annuler</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                deleteCategory(selectedCategory.id);
+                                setIsDeletingCategory(false);
+                            }}
+                        >
+                            Confirmer la suppression
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

@@ -48,6 +48,10 @@ function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
     );
 }
 
+const isValidCatalogName = (name) => {
+    return name.trim().length >= 8;
+};
+
 export default function ManageCatalogsClient({ initialCatalogs }) {
     const [catalogs, setCatalogs] = useState(initialCatalogs);
     const [editingCatalog, setEditingCatalog] = useState(null);
@@ -61,6 +65,15 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
 
     const handleCreateCatalog = async (e) => {
         e.preventDefault();
+        if (!isValidCatalogName(newCatalogName)) {
+            toast({
+                title: "Erreur",
+                description: "Le nom du catalogue doit contenir au moins 8 caractères.",
+                duration: 3000,
+                variant: "destructive",
+            });
+            return;
+        }
         const formData = new FormData();
         formData.append("name", newCatalogName);
         await createCatalog(formData);
@@ -101,7 +114,7 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
     };
 
     return (
-        <div className="bg-white text-black min-h-screen">
+        <div className="bg-white text-black">
             <div className="container mx-auto px-4 py-12">
                 <h1 className="text-4xl font-bold mb-12">Gestion des Catalogues</h1>
 
@@ -113,12 +126,18 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                                 <div className="flex gap-4">
                                     <Input
                                         name="name"
-                                        placeholder="Nom du catalogue"
+                                        placeholder="Nom du catalogue (8 caractères minimum)"
                                         className="flex-grow"
                                         value={newCatalogName}
                                         onChange={(e) => setNewCatalogName(e.target.value)}
                                     />
-                                    <Button type="submit" className="bg-black text-white hover:bg-gray-800">Créer</Button>
+                                    <Button 
+                                        type="submit" 
+                                        className="bg-black text-white hover:bg-gray-800"
+                                        disabled={!isValidCatalogName(newCatalogName)}
+                                    >
+                                        Créer
+                                    </Button>
                                 </div>
                             </form>
                         </CardContent>
@@ -152,14 +171,6 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                                                             onClick={() => router.push(`/catalog-dashboard/${catalog.id}`)}
                                                         >
                                                             Voir le dashboard
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="mr-2 bg-gray-100 hover:bg-gray-200"
-                                                            onClick={() => setEditingCatalog(catalog)}
-                                                        >
-                                                            Éditer
                                                         </Button>
                                                         <Button
                                                             variant="destructive"
