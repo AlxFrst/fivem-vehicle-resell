@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
@@ -42,8 +42,6 @@ export default function CatalogDashboardClient({
     const totalVehicles = allVehicles.length;
     const totalStockValue = availableVehicles.reduce((sum, vehicle) => sum + vehicle.price, 0);
     const totalSalesValue = soldVehicles.reduce((sum, vehicle) => sum + vehicle.price, 0);
-    const mostExpensiveVehicle = availableVehicles.reduce((max, vehicle) => vehicle.price > max.price ? vehicle : max, availableVehicles[0]);
-    const leastExpensiveVehicle = availableVehicles.reduce((min, vehicle) => vehicle.price < min.price ? vehicle : min, availableVehicles[0]);
     const averageSoldPrice = soldVehicles.length > 0 ? totalSalesValue / soldVehicles.length : 0;
 
     useEffect(() => {
@@ -65,7 +63,6 @@ export default function CatalogDashboardClient({
     const handleAcceptReservation = async (reservation) => {
         const result = await acceptReservation(reservation.id);
         if (result.success) {
-            // Mise à jour locale de l'état
             setCatalog(prevCatalog => ({
                 ...prevCatalog,
                 reservations: prevCatalog.reservations
@@ -74,14 +71,12 @@ export default function CatalogDashboardClient({
             }));
         } else {
             console.error('Erreur lors de l\'acceptation de la réservation:', result.error);
-            // Afficher un message d'erreur à l'utilisateur
         }
     };
 
     const handleRejectReservation = async (reservation) => {
         const result = await rejectReservation(reservation.id);
         if (result.success) {
-            // Mise à jour locale de l'état
             setCatalog(prevCatalog => ({
                 ...prevCatalog,
                 reservations: prevCatalog.reservations.map(r =>
@@ -90,139 +85,74 @@ export default function CatalogDashboardClient({
             }));
         } else {
             console.error('Erreur lors du refus de la réservation:', result.error);
-            // Afficher un message d'erreur à l'utilisateur
         }
     };
 
     return (
         <div className="container mx-auto px-4 py-8 bg-white text-black">
-            <h1 className="text-4xl font-bold mb-8 text-center">{catalog.name}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-8 text-center">{catalog.name}</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Statistiques générales */}
                 <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>Statistiques générales</CardTitle>
+                        <CardTitle className="text-xl">Statistiques générales</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            <div className="text-center">
-                                <p className="text-3xl font-bold">{totalVehicles}</p>
-                                <p className="text-sm text-gray-500">Total véhicules</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold">{availableVehicles.length}</p>
-                                <p className="text-sm text-gray-500">Disponibles</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold">{soldVehicles.length}</p>
-                                <p className="text-sm text-gray-500">Vendus</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold">{totalStockValue.toLocaleString()}€</p>
-                                <p className="text-sm text-gray-500">Valeur du stock</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold">{totalSalesValue.toLocaleString()}€</p>
-                                <p className="text-sm text-gray-500">Valeur des ventes</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-3xl font-bold">{averageSoldPrice.toLocaleString()}€</p>
-                                <p className="text-sm text-gray-500">Prix moyen de vente</p>
-                            </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <StatItem label="Total véhicules" value={totalVehicles} />
+                            <StatItem label="Disponibles" value={availableVehicles.length} />
+                            <StatItem label="Vendus" value={soldVehicles.length} />
+                            <StatItem label="Valeur du stock" value={`${totalStockValue.toLocaleString()}€`} />
+                            <StatItem label="Valeur des ventes" value={`${totalSalesValue.toLocaleString()}€`} />
+                            <StatItem label="Prix moyen de vente" value={`${averageSoldPrice.toLocaleString()}€`} />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Informations du catalogue */}
-                <Card className="col-span-2">
+                <Card className="col-span-full md:col-span-2">
                     <CardHeader>
-                        <CardTitle>Informations du catalogue</CardTitle>
+                        <CardTitle className="text-xl">Informations du catalogue</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {isEditingCatalog ? (
-                            <form onSubmit={(e) => {
-                                e.preventDefault();
-                                updateCatalog(new FormData(e.target));
-                                setIsEditingCatalog(false);
-                            }}>
-                                <Input name="name" defaultValue={catalog.name} className="mb-2" placeholder="Nom du catalogue" />
-                                <Input name="serverName" defaultValue={catalog.serverName} className="mb-2" placeholder="Nom du serveur" />
-                                <Textarea name="description" defaultValue={catalog.description} className="mb-2" placeholder="Description" />
-                                <Input name="contactInfo" defaultValue={catalog.contactInfo} className="mb-2" placeholder="Informations de contact" />
-                                <Button type="submit">Sauvegarder</Button>
-                            </form>
+                            <CatalogEditForm catalog={catalog} updateCatalog={updateCatalog} setIsEditingCatalog={setIsEditingCatalog} />
                         ) : (
-                            <div className="space-y-2">
-                                <p><strong>Serveur:</strong> {catalog.serverName}</p>
-                                <p><strong>Description:</strong> {catalog.description}</p>
-                                <p><strong>Contact:</strong> {catalog.contactInfo}</p>
-                                <Button onClick={() => setIsEditingCatalog(true)}>Modifier</Button>
-                            </div>
+                            <CatalogInfo catalog={catalog} setIsEditingCatalog={setIsEditingCatalog} />
                         )}
                     </CardContent>
                 </Card>
 
                 {/* Lien du catalogue */}
-                <Card>
+                <Card className="col-span-full md:col-span-1">
                     <CardHeader>
-                        <CardTitle>Lien du catalogue</CardTitle>
+                        <CardTitle className="text-xl">Lien du catalogue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-col space-y-2">
-                            <Input
-                                type="text"
-                                value={catalogUrl}
-                                readOnly
-                            />
-                            <div className="flex space-x-2">
-                                <Button onClick={() => navigator.clipboard.writeText(catalogUrl)} className="flex-1">
-                                    Copier
-                                </Button>
-                                <Button onClick={() => window.open(catalogUrl, '_blank')} className="flex-1">
-                                    Accéder
-                                </Button>
-                            </div>
-                        </div>
+                        <CatalogLink catalogUrl={catalogUrl} />
                     </CardContent>
                 </Card>
 
                 {/* Catégories */}
-                <Card>
+                <Card className="col-span-full md:col-span-1">
                     <CardHeader>
-                        <CardTitle>Catégories</CardTitle>
+                        <CardTitle className="text-xl">Catégories</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 gap-2">
-                            {catalog.categories.map(category => (
-                                <TooltipProvider key={category.id}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Badge
-                                                className="text-center py-2 cursor-pointer hover:bg-secondary"
-                                                onClick={() => {
-                                                    setSelectedCategory(category);
-                                                    setIsDeletingCategory(true);
-                                                }}
-                                            >
-                                                {category.name}
-                                            </Badge>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Cliquez pour supprimer</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            ))}
-                        </div>
-                        <Button onClick={() => setIsAddingCategory(true)} className="mt-4 w-full">Ajouter une catégorie</Button>
+                        <Categories
+                            categories={catalog.categories}
+                            setSelectedCategory={setSelectedCategory}
+                            setIsDeletingCategory={setIsDeletingCategory}
+                            setIsAddingCategory={setIsAddingCategory}
+                        />
                     </CardContent>
                 </Card>
 
                 {/* Actions rapides */}
-                <Card>
+                <Card className="col-span-full md:col-span-1">
                     <CardHeader>
-                        <CardTitle>Actions rapides</CardTitle>
+                        <CardTitle className="text-xl">Actions rapides</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col space-y-2">
                         <Button onClick={() => setIsAddingVehicle(true)}>Ajouter un véhicule</Button>
@@ -230,258 +160,271 @@ export default function CatalogDashboardClient({
                     </CardContent>
                 </Card>
 
-                {/* <Card className="col-span-full">
-                    <CardHeader>
-                        <CardTitle>Réservations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Véhicule</TableHead>
-                                    <TableHead>Client</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Statut</TableHead>
-                                    <TableHead>Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {catalog.reservations.map(reservation => (
-                                    <TableRow key={reservation.id}>
-                                        <TableCell>{reservation.vehicle?.brand} {reservation.vehicle?.model}</TableCell>
-                                        <TableCell>{reservation.firstName} {reservation.lastName}</TableCell>
-                                        <TableCell>{new Date(reservation.createdAt).toLocaleDateString()}</TableCell>
-                                        <TableCell>{reservation.status || 'En attente'}</TableCell>
-                                        <TableCell>
-                                            {(!reservation.status || reservation.status === 'pending') && (
-                                                <>
-                                                    <Button onClick={() => handleAcceptReservation(reservation)} size="sm" className="mr-2">
-                                                        Accepter
-                                                    </Button>
-                                                    <Button onClick={() => handleRejectReservation(reservation)} size="sm" variant="destructive">
-                                                        Refuser
-                                                    </Button>
-                                                </>
-                                            )}
-                                            {reservation.status === 'accepted' && (
-                                                <Button onClick={() => handleRejectReservation(reservation)} size="sm" variant="outline">
-                                                    Annuler l'acceptation
-                                                </Button>
-                                            )}
-                                            {reservation.status === 'rejected' && (
-                                                <Button onClick={() => handleAcceptReservation(reservation)} size="sm" variant="outline">
-                                                    Réactiver
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card> */}
-
                 {/* Liste des véhicules */}
                 <Card className="col-span-full">
                     <CardHeader>
-                        <CardTitle>Liste des véhicules</CardTitle>
+                        <CardTitle className="text-xl">Liste des véhicules</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Tabs defaultValue="available">
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="available">Disponibles</TabsTrigger>
-                                <TabsTrigger value="sold">Vendus</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="available">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Marque</TableHead>
-                                            <TableHead>Modèle</TableHead>
-                                            <TableHead>Prix</TableHead>
-                                            <TableHead>Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {availableVehicles.map(vehicle => (
-                                            <TableRow key={vehicle.id}>
-                                                <TableCell>{vehicle.brand}</TableCell>
-                                                <TableCell>{vehicle.model}</TableCell>
-                                                <TableCell>{vehicle.price}€</TableCell>
-                                                <TableCell>
-                                                    <Button onClick={() => handleSellVehicle(vehicle)} size="sm">
-                                                        Vendre
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TabsContent>
-                            <TabsContent value="sold">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Marque</TableHead>
-                                            <TableHead>Modèle</TableHead>
-                                            <TableHead>Prix</TableHead>
-                                            <TableHead>Acheteur</TableHead>
-                                            <TableHead>Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {soldVehicles.map(vehicle => (
-                                            <TableRow key={vehicle.id}>
-                                                <TableCell>{vehicle.brand}</TableCell>
-                                                <TableCell>{vehicle.model}</TableCell>
-                                                <TableCell>{vehicle.price}€</TableCell>
-                                                <TableCell>{vehicle.buyerName}</TableCell>
-                                                <TableCell>
-                                                    <Button onClick={() => updateVehicleStatus(vehicle.id, 'available')} size="sm" variant="outline">
-                                                        Rendre disponible
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TabsContent>
-                        </Tabs>
+                        <VehicleList
+                            availableVehicles={availableVehicles}
+                            soldVehicles={soldVehicles}
+                            handleSellVehicle={handleSellVehicle}
+                            updateVehicleStatus={updateVehicleStatus}
+                        />
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Modal pour ajouter une catégorie */}
-            <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Ajouter une catégorie</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={(e) => {
-                        e.preventDefault();
-                        addCategory(new FormData(e.target));
-                        setIsAddingCategory(false);
-                    }}>
-                        <Input name="name" placeholder="Nom de la catégorie" />
-                        <DialogFooter>
-                            <Button type="submit">Ajouter</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Modal pour ajouter un véhicule */}
-            <Dialog open={isAddingVehicle} onOpenChange={setIsAddingVehicle}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={(e) => {
-                        e.preventDefault();
-                        addVehicle(new FormData(e.target));
-                        setIsAddingVehicle(false);
-                    }}>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="brand" className="text-right">
-                                    Marque
-                                </Label>
-                                <Input id="brand" name="brand" placeholder="Ex: Toyota" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="model" className="text-right">
-                                    Modèle
-                                </Label>
-                                <Input id="model" name="model" placeholder="Ex: Corolla" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="price" className="text-right">
-                                    Prix (€)
-                                </Label>
-                                <Input id="price" name="price" type="number" placeholder="Ex: 15000" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="mileage" className="text-right">
-                                    Kilométrage
-                                </Label>
-                                <Input id="mileage" name="mileage" type="number" placeholder="Ex: 50000" className="col-span-3" required />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="description" className="text-right">
-                                    Description
-                                </Label>
-                                <Textarea id="description" name="description" placeholder="Description du véhicule" className="col-span-3" />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="categoryId" className="text-right">
-                                    Catégorie
-                                </Label>
-                                <Select name="categoryId" required>
-                                    <SelectTrigger className="col-span-3">
-                                        <SelectValue placeholder="Sélectionnez une catégorie" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {catalog.categories.map(category => (
-                                            <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="image" className="text-right">
-                                    Image
-                                </Label>
-                                <Input id="image" name="image" type="file" accept="image/*" className="col-span-3" />
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit">Ajouter le véhicule</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Modal pour vendre un véhicule */}
-            <Dialog open={isSellingVehicle} onOpenChange={setIsSellingVehicle}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Vendre le véhicule</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmitSale}>
-                        <Input name="buyerName" placeholder="Nom de l'acheteur" className="mb-2" required />
-                        <DialogFooter>
-                            <Button type="submit">Confirmer la vente</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Modal pour supprimer une catégorie */}
-            <Dialog open={isDeletingCategory} onOpenChange={setIsDeletingCategory}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Supprimer la catégorie</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-red-500 font-bold">
-                        Attention ! En supprimant cette catégorie, tous les véhicules associés seront également supprimés.
-                    </p>
-                    <p>
-                        Êtes-vous sûr de vouloir supprimer la catégorie "{selectedCategory?.name}" ?
-                    </p>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDeletingCategory(false)}>Annuler</Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => {
-                                deleteCategory(selectedCategory.id);
-                                setIsDeletingCategory(false);
-                            }}
-                        >
-                            Confirmer la suppression
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Modals */}
+            <AddCategoryModal isOpen={isAddingCategory} setIsOpen={setIsAddingCategory} addCategory={addCategory} />
+            <AddVehicleModal isOpen={isAddingVehicle} setIsOpen={setIsAddingVehicle} addVehicle={addVehicle} categories={catalog.categories} />
+            <SellVehicleModal isOpen={isSellingVehicle} setIsOpen={setIsSellingVehicle} handleSubmitSale={handleSubmitSale} />
+            <DeleteCategoryModal
+                isOpen={isDeletingCategory}
+                setIsOpen={setIsDeletingCategory}
+                selectedCategory={selectedCategory}
+                deleteCategory={deleteCategory}
+            />
         </div>
     );
 }
+
+// Composants auxiliaires
+
+const StatItem = ({ label, value }) => (
+    <div className="text-center">
+        <p className="text-2xl md:text-3xl font-bold">{value}</p>
+        <p className="text-xs md:text-sm text-gray-500">{label}</p>
+    </div>
+);
+
+const CatalogEditForm = ({ catalog, updateCatalog, setIsEditingCatalog }) => (
+    <form onSubmit={(e) => {
+        e.preventDefault();
+        updateCatalog(new FormData(e.target));
+        setIsEditingCatalog(false);
+    }}>
+        <Input name="name" defaultValue={catalog.name} className="mb-2" placeholder="Nom du catalogue" />
+        <Input name="serverName" defaultValue={catalog.serverName} className="mb-2" placeholder="Nom du serveur" />
+        <Textarea name="description" defaultValue={catalog.description} className="mb-2" placeholder="Description" />
+        <Input name="contactInfo" defaultValue={catalog.contactInfo} className="mb-2" placeholder="Informations de contact" />
+        <Button type="submit">Sauvegarder</Button>
+    </form>
+);
+
+const CatalogInfo = ({ catalog, setIsEditingCatalog }) => (
+    <div className="space-y-2">
+        <p><strong>Serveur:</strong> {catalog.serverName}</p>
+        <p><strong>Description:</strong> {catalog.description}</p>
+        <p><strong>Contact:</strong> {catalog.contactInfo}</p>
+        <Button onClick={() => setIsEditingCatalog(true)}>Modifier</Button>
+    </div>
+);
+
+const CatalogLink = ({ catalogUrl }) => (
+    <div className="flex flex-col space-y-2">
+        <Input type="text" value={catalogUrl} readOnly />
+        <div className="flex space-x-2">
+            <Button onClick={() => navigator.clipboard.writeText(catalogUrl)} className="flex-1">Copier</Button>
+            <Button onClick={() => window.open(catalogUrl, '_blank')} className="flex-1">Accéder</Button>
+        </div>
+    </div>
+);
+
+const Categories = ({ categories, setSelectedCategory, setIsDeletingCategory, setIsAddingCategory }) => (
+    <>
+        <div className="grid grid-cols-2 gap-2 mb-4">
+            {categories.map(category => (
+                <TooltipProvider key={category.id}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Badge
+                                className="text-center py-2 cursor-pointer hover:bg-secondary"
+                                onClick={() => {
+                                    setSelectedCategory(category);
+                                    setIsDeletingCategory(true);
+                                }}
+                            >
+                                {category.name}
+                            </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Cliquez pour supprimer</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            ))}
+        </div>
+        <Button onClick={() => setIsAddingCategory(true)} className="w-full">Ajouter une catégorie</Button>
+    </>
+);
+
+const VehicleList = ({ availableVehicles, soldVehicles, handleSellVehicle, updateVehicleStatus }) => (
+    <Tabs defaultValue="available">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="available">Disponibles</TabsTrigger>
+            <TabsTrigger value="sold">Vendus</TabsTrigger>
+        </TabsList>
+        <TabsContent value="available">
+            <VehicleTable vehicles={availableVehicles} onAction={handleSellVehicle} actionLabel="Vendre" />
+        </TabsContent>
+        <TabsContent value="sold">
+            <VehicleTable vehicles={soldVehicles} onAction={(vehicle) => updateVehicleStatus(vehicle.id, 'available')} actionLabel="Rendre disponible" showBuyer />
+        </TabsContent>
+    </Tabs>
+);
+
+const VehicleTable = ({ vehicles, onAction, actionLabel, showBuyer = false }) => (
+    <div className="overflow-x-auto">
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Marque</TableHead>
+                    <TableHead>Modèle</TableHead>
+                    <TableHead>Prix</TableHead>
+                    {showBuyer && <TableHead>Acheteur</TableHead>}
+                    <TableHead>Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {vehicles.map(vehicle => (
+                    <TableRow key={vehicle.id}>
+                        <TableCell>{vehicle.brand}</TableCell>
+                        <TableCell>{vehicle.model}</TableCell>
+                        <TableCell>{vehicle.price}€</TableCell>
+                        {showBuyer && <TableCell>{vehicle.buyerName}</TableCell>}
+                        <TableCell>
+                            <Button onClick={() => onAction(vehicle)} size="sm">
+                                {actionLabel}
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    </div>
+);
+
+// Modals
+const AddCategoryModal = ({ isOpen, setIsOpen, addCategory }) => (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Ajouter une catégorie</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                addCategory(new FormData(e.target));
+                setIsOpen(false);
+            }}>
+                <Input name="name" placeholder="Nom de la catégorie" />
+                <DialogFooter>
+                    <Button type="submit">Ajouter</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
+);
+
+const AddVehicleModal = ({ isOpen, setIsOpen, addVehicle, categories }) => (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                addVehicle(new FormData(e.target));
+                setIsOpen(false);
+            }}>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="brand" className="text-right">Marque</Label>
+                        <Input id="brand" name="brand" placeholder="Ex: Toyota" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="model" className="text-right">Modèle</Label>
+                        <Input id="model" name="model" placeholder="Ex: Corolla" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="price" className="text-right">Prix (€)</Label>
+                        <Input id="price" name="price" type="number" placeholder="Ex: 15000" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="mileage" className="text-right">Kilométrage</Label>
+                        <Input id="mileage" name="mileage" type="number" placeholder="Ex: 50000" className="col-span-3" required />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="description" className="text-right">Description</Label>
+                        <Textarea id="description" name="description" placeholder="Description du véhicule" className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="categoryId" className="text-right">Catégorie</Label>
+                        <Select name="categoryId" required>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Sélectionnez une catégorie" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(category => (
+                                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="image" className="text-right">Image</Label>
+                        <Input id="image" name="image" type="file" accept="image/*" className="col-span-3" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button type="submit">Ajouter le véhicule</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
+);
+
+const SellVehicleModal = ({ isOpen, setIsOpen, handleSubmitSale }) => (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Vendre le véhicule</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmitSale}>
+                <Input name="buyerName" placeholder="Nom de l'acheteur" className="mb-2" required />
+                <DialogFooter>
+                    <Button type="submit">Confirmer la vente</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
+);
+
+const DeleteCategoryModal = ({ isOpen, setIsOpen, selectedCategory, deleteCategory }) => (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Supprimer la catégorie</DialogTitle>
+            </DialogHeader>
+            <p className="text-red-500 font-bold">
+                Attention ! En supprimant cette catégorie, tous les véhicules associés seront également supprimés.
+            </p>
+            <p>
+                Êtes-vous sûr de vouloir supprimer la catégorie "{selectedCategory?.name}" ?
+            </p>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
+                <Button
+                    variant="destructive"
+                    onClick={() => {
+                        deleteCategory(selectedCategory.id);
+                        setIsOpen(false);
+                    }}
+                >
+                    Confirmer la suppression
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+);
