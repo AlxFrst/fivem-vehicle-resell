@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from 'next/image';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { reserveVehicle } from './actions';
 
 export default function CatalogClient({ catalog }) {
     const [isReserving, setIsReserving] = useState(false);
@@ -27,10 +28,20 @@ export default function CatalogClient({ catalog }) {
 
     const handleSubmitReservation = async (e) => {
         e.preventDefault();
-        const firstName = e.target.firstName.value;
-        const lastName = e.target.lastName.value;
-        console.log(`Réservation pour ${firstName} ${lastName} sur le véhicule ${selectedVehicle.brand} ${selectedVehicle.model}`);
-        setIsReserving(false);
+        const formData = new FormData(e.target);
+        formData.append('vehicleId', selectedVehicle.id);
+        formData.append('catalogId', catalog.id);
+
+        const result = await reserveVehicle(formData);
+
+        if (result.success) {
+            console.log('Réservation créée avec succès:', result.reservation);
+            // Vous pouvez ajouter ici une notification pour l'utilisateur
+            setIsReserving(false);
+        } else {
+            console.error('Erreur lors de la réservation:', result.error);
+            // Vous pouvez ajouter ici une gestion d'erreur pour l'utilisateur
+        }
     };
 
     const allVehicles = useMemo(() => catalog.categories.flatMap(category =>
@@ -128,7 +139,7 @@ export default function CatalogClient({ catalog }) {
                                 </Badge>
                             </div>
                             {/* {vehicle.status !== 'sold' && (
-                                <Button className="w-full mt-4" onClick={() => handleReserve(vehicle)}>Réserver (en dev)</Button>
+                                <Button disabled className="w-full mt-4" onClick={() => handleReserve(vehicle)}>Réserver</Button>
                             )} */}
                         </CardContent>
                     </Card>

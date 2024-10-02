@@ -22,6 +22,8 @@ export default function CatalogDashboardClient({
     addVehicle,
     updateVehicleStatus,
     deleteVehicle,
+    acceptReservation,
+    rejectReservation,
 }) {
     const [isEditingCatalog, setIsEditingCatalog] = useState(false);
     const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -31,6 +33,7 @@ export default function CatalogDashboardClient({
     const [isDeletingCategory, setIsDeletingCategory] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [catalogUrl, setCatalogUrl] = useState('');
+    const [catalogState, setCatalog] = useState(catalog);
 
     const allVehicles = catalog.categories.flatMap(category => category.vehicles);
     const availableVehicles = allVehicles.filter(v => v.status === 'available');
@@ -57,6 +60,38 @@ export default function CatalogDashboardClient({
         const buyerName = e.target.buyerName.value;
         updateVehicleStatus(selectedVehicle.id, 'sold', buyerName);
         setIsSellingVehicle(false);
+    };
+
+    const handleAcceptReservation = async (reservation) => {
+        const result = await acceptReservation(reservation.id);
+        if (result.success) {
+            // Mise à jour locale de l'état
+            setCatalog(prevCatalog => ({
+                ...prevCatalog,
+                reservations: prevCatalog.reservations
+                    .filter(r => r.vehicle.id !== reservation.vehicle.id)
+                    .map(r => r.id === reservation.id ? { ...r, status: 'accepted' } : r)
+            }));
+        } else {
+            console.error('Erreur lors de l\'acceptation de la réservation:', result.error);
+            // Afficher un message d'erreur à l'utilisateur
+        }
+    };
+
+    const handleRejectReservation = async (reservation) => {
+        const result = await rejectReservation(reservation.id);
+        if (result.success) {
+            // Mise à jour locale de l'état
+            setCatalog(prevCatalog => ({
+                ...prevCatalog,
+                reservations: prevCatalog.reservations.map(r =>
+                    r.id === reservation.id ? { ...r, status: 'rejected' } : r
+                )
+            }));
+        } else {
+            console.error('Erreur lors du refus de la réservation:', result.error);
+            // Afficher un message d'erreur à l'utilisateur
+        }
     };
 
     return (
@@ -194,6 +229,57 @@ export default function CatalogDashboardClient({
                         <Button variant="outline">Exporter les données</Button>
                     </CardContent>
                 </Card>
+
+                {/* <Card className="col-span-full">
+                    <CardHeader>
+                        <CardTitle>Réservations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Véhicule</TableHead>
+                                    <TableHead>Client</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead>Statut</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {catalog.reservations.map(reservation => (
+                                    <TableRow key={reservation.id}>
+                                        <TableCell>{reservation.vehicle?.brand} {reservation.vehicle?.model}</TableCell>
+                                        <TableCell>{reservation.firstName} {reservation.lastName}</TableCell>
+                                        <TableCell>{new Date(reservation.createdAt).toLocaleDateString()}</TableCell>
+                                        <TableCell>{reservation.status || 'En attente'}</TableCell>
+                                        <TableCell>
+                                            {(!reservation.status || reservation.status === 'pending') && (
+                                                <>
+                                                    <Button onClick={() => handleAcceptReservation(reservation)} size="sm" className="mr-2">
+                                                        Accepter
+                                                    </Button>
+                                                    <Button onClick={() => handleRejectReservation(reservation)} size="sm" variant="destructive">
+                                                        Refuser
+                                                    </Button>
+                                                </>
+                                            )}
+                                            {reservation.status === 'accepted' && (
+                                                <Button onClick={() => handleRejectReservation(reservation)} size="sm" variant="outline">
+                                                    Annuler l'acceptation
+                                                </Button>
+                                            )}
+                                            {reservation.status === 'rejected' && (
+                                                <Button onClick={() => handleAcceptReservation(reservation)} size="sm" variant="outline">
+                                                    Réactiver
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card> */}
 
                 {/* Liste des véhicules */}
                 <Card className="col-span-full">

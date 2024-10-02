@@ -132,6 +132,8 @@ export default async function CatalogDashboardPage({ params }) {
         addVehicle={addVehicle}
         updateVehicleStatus={updateVehicleStatus}
         deleteVehicle={deleteVehicle}
+        acceptReservation={acceptReservation}
+        rejectReservation={rejectReservation}
     />;
 }
 
@@ -141,14 +143,77 @@ async function getCatalog(id, userId) {
         include: {
             categories: {
                 include: {
-                    vehicles: {
-                        orderBy: {
-                            createdAt: 'desc'
-                        }
-                    }
+                    vehicles: true
                 }
             },
-            reservations: true
+            reservations: {
+                include: {
+                    vehicle: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            }
         },
     });
+}
+
+async function acceptReservation(reservationId) {
+    'use server'
+    try {
+        const reservation = await prisma.reservation.findUnique({
+            where: { id: reservationId },
+            include: { vehicle: true },
+        });
+
+        if (!reservation) {
+            return { success: false, error: 'Réservation non trouvée' };
+        }
+
+        // Mettre à jour le statut du véhicule
+        await prisma.vehicle.update({
+            where: { id: reservation.vehicle.id },
+            data: {
+                status: 'sold',
+                buyerName: `${reservation.firstName} ${reservation.lastName}`
+            },
+        });
+
+        // Mettre à jour le statut de la réservation
+        await prisma.reservation.update({
+            where: { id: reservationId },
+            data: { status: 'accepted' },
+        });
+
+        // Supprimer les autres réservations pour ce véhicule
+        await prisma.reservation.deleteMany({
+            where: {
+                vehicleId: reservation.vehicle.id,
+                id: { not: reservationId },
+            },
+        });
+
+        revalidatePath(`/catalog-dashboard/${reservation.catalogId}`);
+        return { success: true };
+    } catch (error) {
+        console.error('Erreur lors de l\'acceptation de la réservation:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function rejectReservation(reservationId) {
+    'use server'
+    try {
+        const updatedReservation = await prisma.reservation.update({
+            where: { id: reservationId },
+            data: { status: 'rejected' },
+            include: { vehicle: true },
+        });
+
+        revalidatePath(`/catalog-dashboard/${updatedReservation.catalogId}`);
+        return { success: true, reservation: updatedReservation };
+    } catch (error) {
+        console.error('Erreur lors du rejet de la réservation:', error);
+        return { success: false, error: error.message };
+    }
 }
