@@ -199,28 +199,131 @@ const StatItem = ({ label, value }) => (
     </div>
 );
 
-const CatalogEditForm = ({ catalog, updateCatalog, setIsEditingCatalog }) => (
-    <form onSubmit={(e) => {
-        e.preventDefault();
-        updateCatalog(new FormData(e.target));
-        setIsEditingCatalog(false);
-    }}>
-        <Input name="name" defaultValue={catalog.name} className="mb-2" placeholder="Nom du catalogue" />
-        <Input name="serverName" defaultValue={catalog.serverName} className="mb-2" placeholder="Nom du serveur" />
-        <Textarea name="description" defaultValue={catalog.description} className="mb-2" placeholder="Description" />
-        <Input name="contactInfo" defaultValue={catalog.contactInfo} className="mb-2" placeholder="Informations de contact" />
-        <Button type="submit">Sauvegarder</Button>
-    </form>
+const CatalogEditForm = ({ catalog, updateCatalog, setIsEditingCatalog }) => {
+    const [showWebhook, setShowWebhook] = useState(false);
+    const [showWebhookHelp, setShowWebhookHelp] = useState(false);
+
+    return (
+        <form onSubmit={(e) => {
+            e.preventDefault();
+            updateCatalog(new FormData(e.target));
+            setIsEditingCatalog(false);
+        }}>
+            <Input name="name" defaultValue={catalog.name} className="mb-2" placeholder="Nom du catalogue" />
+            <Input name="serverName" defaultValue={catalog.serverName} className="mb-2" placeholder="Nom du serveur" />
+            <Textarea name="description" defaultValue={catalog.description} className="mb-2" placeholder="Description" />
+            <Input name="contactInfo" defaultValue={catalog.contactInfo} className="mb-2" placeholder="Informations de contact" />
+            <div className="relative mb-2">
+                <Input
+                    name="discordWebhook"
+                    type={showWebhook ? "text" : "password"}
+                    defaultValue={catalog.webhookUrl}
+                    placeholder="Webhook Discord"
+                />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    className="absolute right-10 top-1/2 transform -translate-y-1/2"
+                    onClick={() => setShowWebhook(!showWebhook)}
+                >
+                    {showWebhook ? "Masquer" : "Afficher"}
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                    onClick={() => setShowWebhookHelp(true)}
+                >
+                    ?
+                </Button>
+            </div>
+            <Button type="submit">Sauvegarder</Button>
+
+            <WebhookHelpModal isOpen={showWebhookHelp} setIsOpen={setShowWebhookHelp} />
+        </form>
+    );
+};
+
+const WebhookHelpModal = ({ isOpen, setIsOpen }) => (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Comment ajouter un webhook Discord</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+                <ol className="list-decimal list-inside space-y-2">
+                    <li>Ouvrez votre serveur Discord</li>
+                    <li>Allez dans les paramètres du canal</li>
+                    <li>Cliquez sur "Intégrations"</li>
+                    <li>Cliquez sur "Créer un webhook"</li>
+                    <li>Copiez l'URL du webhook</li>
+                    <li>Collez l'URL dans le champ "Webhook Discord"</li>
+                </ol>
+                {/* Vous pouvez ajouter des images ici */}
+            </div>
+            <DialogFooter>
+                <Button onClick={() => setIsOpen(false)}>Fermer</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 );
 
-const CatalogInfo = ({ catalog, setIsEditingCatalog }) => (
-    <div className="space-y-2">
-        <p><strong>Serveur:</strong> {catalog.serverName}</p>
-        <p><strong>Description:</strong> {catalog.description}</p>
-        <p><strong>Contact:</strong> {catalog.contactInfo}</p>
-        <Button onClick={() => setIsEditingCatalog(true)}>Modifier</Button>
-    </div>
-);
+const CatalogInfo = ({ catalog, setIsEditingCatalog }) => {
+    const [showWebhook, setShowWebhook] = useState(false);
+
+    const maskedWebhook = catalog.discordWebhook
+        ? catalog.discordWebhook.replace(/./g, '•').slice(0, 20) + '...'
+        : '';
+
+    return (
+        <div className="space-y-2">
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <p><strong>Serveur:</strong> {catalog.serverName}</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{catalog.serverName}</p>
+                    </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <p><strong>Description:</strong> {catalog.description.substring(0, 50)}...</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{catalog.description}</p>
+                    </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <p><strong>Contact:</strong> {catalog.contactInfo}</p>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{catalog.contactInfo}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+            <p> Vous pouvez ajouter un webhook Discord pour recevoir des notifications lorsque des véhicules sont ajoutés ou vendus dans ce catalogue quand vous modifiez le catalogue.</p>
+
+            {catalog.discordWebhook && (
+                <p>
+                    <strong>Webhook Discord:</strong>{' '}
+                    {showWebhook ? catalog.discordWebhook : maskedWebhook}
+                    <Button
+                        variant="ghost"
+                        className="ml-2"
+                        onClick={() => setShowWebhook(!showWebhook)}
+                    >
+                        {showWebhook ? "Masquer" : "Afficher"}
+                    </Button>
+                </p>
+            )}
+            <Button onClick={() => setIsEditingCatalog(true)}>Modifier</Button>
+        </div>
+    );
+};
 
 const CatalogLink = ({ catalogUrl }) => (
     <div className="flex flex-col space-y-2">

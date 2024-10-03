@@ -3,6 +3,40 @@ import prisma from "@/lib/db";
 import CatalogDashboardClient from './CatalogDashboardClient';
 import { revalidatePath } from 'next/cache';
 
+async function sendDiscordWebhook(webhookUrl, vehicleData, action = 'added') {
+    const isNewVehicle = action === 'added';
+    const color = isNewVehicle ? 0x00ff00 : 0xff0000; // Green for new, Red for sold
+    const title = isNewVehicle
+        ? `🆕 Nouveau véhicule ajouté : ${vehicleData.brand} ${vehicleData.model}`
+        : `💰 Véhicule vendu : ${vehicleData.brand} ${vehicleData.model}`;
+
+    const embed = {
+        title: title,
+        color: color,
+        fields: [
+            { name: '🚗 Marque', value: vehicleData.brand, inline: true },
+            { name: '🚙 Modèle', value: vehicleData.model, inline: true },
+            { name: '💶 Prix', value: `${vehicleData.price.toLocaleString()}€`, inline: true },
+            { name: '🛣️ Kilométrage', value: `${vehicleData.mileage.toLocaleString()} km`, inline: true },
+            { name: '📝 Description', value: vehicleData.description || 'Aucune description' },
+        ],
+        footer: {
+            text: `Véhicule ${isNewVehicle ? 'ajouté' : 'vendu'} le ${new Date().toLocaleDateString('fr-FR')}`,
+        },
+        timestamp: new Date().toISOString(),
+    };
+
+    if (!isNewVehicle && vehicleData.buyerName) {
+        embed.fields.push({ name: '🧑 Acheteur', value: vehicleData.buyerName });
+    }
+
+    await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [embed] }),
+    });
+}
+
 export default async function CatalogDashboardPage({ params }) {
     const session = await auth();
     if (!session) {
@@ -31,10 +65,17 @@ export default async function CatalogDashboardPage({ params }) {
         const serverName = formData.get('serverName');
         const description = formData.get('description');
         const contactInfo = formData.get('contactInfo');
+        const discordWebhook = formData.get('discordWebhook');
 
         await prisma.catalog.update({
             where: { id: params.id },
-            data: { name, serverName, description, contactInfo },
+            data: {
+                name,
+                serverName,
+                description,
+                contactInfo,
+                webhookUrl: discordWebhook,
+            },
         });
 
         revalidatePath(`/catalog-dashboard/${params.id}`);
@@ -74,12 +115,12 @@ export default async function CatalogDashboardPage({ params }) {
         const imageFile = formData.get('image');
 
         let image = null;
-        if (imageFile) {
+        if (imageFile && imageFile.size > 0) {
             const imageBuffer = await imageFile.arrayBuffer();
             image = Buffer.from(imageBuffer);
         }
 
-        await prisma.vehicle.create({
+        const newVehicle = await prisma.vehicle.create({
             data: {
                 brand,
                 model,
@@ -92,7 +133,25 @@ export default async function CatalogDashboardPage({ params }) {
             },
         });
 
+        // Fetch the catalog to get the webhook URL
+        const catalog = await prisma.catalog.findUnique({
+            where: { id: params.id },
+            select: { webhookUrl: true }
+        });
+
+        if (catalog && catalog.webhookUrl) {
+            try {
+                await sendDiscordWebhook(catalog.webhookUrl, newVehicle, 'added');
+            } catch (error) {
+                console.error('Error sending Discord webhook:', error);
+                // You might want to add some error handling here, 
+                // such as showing a notification to the user
+            }
+        }
+
         revalidatePath(`/catalog-dashboard/${params.id}`);
+
+        return { success: true, vehicle: newVehicle };
     }
 
     async function updateVehicleStatus(vehicleId, status, buyerName = null) {
@@ -107,10 +166,20 @@ export default async function CatalogDashboardPage({ params }) {
             updateData.buyerName = null;
         }
 
-        await prisma.vehicle.update({
+        const updatedVehicle = await prisma.vehicle.update({
             where: { id: vehicleId },
             data: updateData,
         });
+
+        // Fetch the catalog to get the webhook URL
+        const catalog = await prisma.catalog.findUnique({
+            where: { id: params.id },
+            select: { webhookUrl: true }
+        });
+
+        if (status === 'sold' && catalog && catalog.webhookUrl) {
+            await sendDiscordWebhook(catalog.webhookUrl, updatedVehicle, 'sold');
+        }
 
         revalidatePath(`/catalog-dashboard/${params.id}`);
     }
@@ -140,7 +209,13 @@ export default async function CatalogDashboardPage({ params }) {
 async function getCatalog(id, userId) {
     return prisma.catalog.findFirst({
         where: { id, userId },
-        include: {
+        select: {
+            id: true,
+            name: true,
+            serverName: true,
+            description: true,
+            contactInfo: true,
+            webhookUrl: true,  // Include the new webhookUrl field
             categories: {
                 include: {
                     vehicles: true
