@@ -23,8 +23,30 @@ export default async function ManageCatalogsPage() {
 }
 
 async function getCatalogs(userId) {
-    return prisma.catalog.findMany({
+    const ownedCatalogs = await prisma.catalog.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
     });
+
+    const collaborativeCatalogs = await prisma.catalog.findMany({
+        where: {
+            collaborators: {
+                some: { userId }
+            }
+        },
+        include: {
+            user: {
+                select: {
+                    name: true,
+                    email: true
+                }
+            }
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    return {
+        ownedCatalogs,
+        collaborativeCatalogs
+    };
 }

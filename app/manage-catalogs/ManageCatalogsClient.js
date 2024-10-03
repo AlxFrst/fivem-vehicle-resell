@@ -48,19 +48,75 @@ function EditCatalogDialog({ catalog, isOpen, onClose, onEdit }) {
     );
 }
 
+function CatalogTable({ catalogs, handleDelete, router, isOwner }) {
+    return (
+        <Card className="border-none shadow-lg overflow-hidden">
+            <CardContent className="p-0">
+                {catalogs.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="font-semibold">Nom du catalogue</TableHead>
+                                    <TableHead className="font-semibold">Date de création</TableHead>
+                                    {!isOwner && <TableHead className="font-semibold">Propriétaire</TableHead>}
+                                    <TableHead className="font-semibold">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {catalogs.map((catalog) => (
+                                    <TableRow key={catalog.id}>
+                                        <TableCell className="font-medium">{catalog.name}</TableCell>
+                                        <TableCell>{new Date(catalog.createdAt).toLocaleDateString()}</TableCell>
+                                        {!isOwner && <TableCell>{catalog.user.name || catalog.user.email}</TableCell>}
+                                        <TableCell>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="mr-2 bg-gray-100 hover:bg-gray-200"
+                                                onClick={() => router.push(`/catalog-dashboard/${catalog.id}`)}
+                                            >
+                                                Voir le dashboard
+                                            </Button>
+                                            {isOwner && (
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    className="bg-red-500 hover:bg-red-600 text-white"
+                                                    onClick={() => handleDelete(catalog.id)}
+                                                >
+                                                    Supprimer
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ) : (
+                    <p className="p-6 text-center text-gray-500">Aucun catalogue trouvé.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 const isValidCatalogName = (name) => {
     return name.trim().length >= 8;
 };
 
 export default function ManageCatalogsClient({ initialCatalogs }) {
-    const [catalogs, setCatalogs] = useState(initialCatalogs);
+    const [ownedCatalogs, setOwnedCatalogs] = useState(initialCatalogs.ownedCatalogs);
+    const [collaborativeCatalogs, setCollaborativeCatalogs] = useState(initialCatalogs.collaborativeCatalogs);
     const [editingCatalog, setEditingCatalog] = useState(null);
     const [newCatalogName, setNewCatalogName] = useState("");
     const router = useRouter();
     const { toast } = useToast();
 
     useEffect(() => {
-        setCatalogs(initialCatalogs);
+        setOwnedCatalogs(initialCatalogs.ownedCatalogs);
+        setCollaborativeCatalogs(initialCatalogs.collaborativeCatalogs);
     }, [initialCatalogs]);
 
     const handleCreateCatalog = async (e) => {
@@ -84,7 +140,7 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
             createdAt: new Date().toISOString(),
         };
 
-        setCatalogs(prevCatalogs => [newCatalog, ...prevCatalogs]);
+        setOwnedCatalogs(prevCatalogs => [newCatalog, ...prevCatalogs]);
         setNewCatalogName("");
         router.refresh();
 
@@ -97,18 +153,18 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
 
     const handleEdit = async (catalogId, newName) => {
         await editCatalog(catalogId, newName);
-        const updatedCatalogs = catalogs.map(cat =>
+        const updatedCatalogs = ownedCatalogs.map(cat =>
             cat.id === catalogId ? { ...cat, name: newName } : cat
         );
-        setCatalogs(updatedCatalogs);
+        setOwnedCatalogs(updatedCatalogs);
         router.refresh();
     };
 
     const handleDelete = async (catalogId) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer ce catalogue ?")) {
             await deleteCatalog(catalogId);
-            const updatedCatalogs = catalogs.filter(cat => cat.id !== catalogId);
-            setCatalogs(updatedCatalogs);
+            const updatedCatalogs = ownedCatalogs.filter(cat => cat.id !== catalogId);
+            setOwnedCatalogs(updatedCatalogs);
             router.refresh();
         }
     };
@@ -131,8 +187,8 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
                                         value={newCatalogName}
                                         onChange={(e) => setNewCatalogName(e.target.value)}
                                     />
-                                    <Button 
-                                        type="submit" 
+                                    <Button
+                                        type="submit"
                                         className="bg-black text-white hover:bg-gray-800"
                                         disabled={!isValidCatalogName(newCatalogName)}
                                     >
@@ -146,51 +202,21 @@ export default function ManageCatalogsClient({ initialCatalogs }) {
 
                 <section className="mb-16">
                     <h2 className="text-2xl font-semibold mb-6">Vos catalogues</h2>
-                    <Card className="border-none shadow-lg overflow-hidden">
-                        <CardContent className="p-0">
-                            {catalogs.length > 0 ? (
-                                <div className="overflow-x-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="font-semibold">Nom du catalogue</TableHead>
-                                                <TableHead className="font-semibold">Date de création</TableHead>
-                                                <TableHead className="font-semibold">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {catalogs.map((catalog) => (
-                                                <TableRow key={catalog.id}>
-                                                    <TableCell className="font-medium">{catalog.name}</TableCell>
-                                                    <TableCell>{new Date(catalog.createdAt).toLocaleDateString()}</TableCell>
-                                                    <TableCell>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="mr-2 bg-gray-100 hover:bg-gray-200"
-                                                            onClick={() => router.push(`/catalog-dashboard/${catalog.id}`)}
-                                                        >
-                                                            Voir le dashboard
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            className="bg-red-500 hover:bg-red-600 text-white"
-                                                            onClick={() => handleDelete(catalog.id)}
-                                                        >
-                                                            Supprimer
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            ) : (
-                                <p className="p-6 text-center text-gray-500">Aucun catalogue trouvé.</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <CatalogTable
+                        catalogs={ownedCatalogs}
+                        handleDelete={handleDelete}
+                        router={router}
+                        isOwner={true}
+                    />
+                </section>
+
+                <section className="mb-16">
+                    <h2 className="text-2xl font-semibold mb-6">Catalogues collaboratifs</h2>
+                    <CatalogTable
+                        catalogs={collaborativeCatalogs}
+                        router={router}
+                        isOwner={false}
+                    />
                 </section>
 
                 <section>
