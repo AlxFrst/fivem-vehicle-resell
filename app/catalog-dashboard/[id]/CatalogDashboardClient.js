@@ -303,10 +303,15 @@ const CatalogInfo = ({ catalog, setIsEditingCatalog }) => {
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <p><strong>Description:</strong> {catalog.description.substring(0, 50)}...</p>
+                        <p>
+                            <strong>Description:</strong>{' '}
+                            {catalog.description
+                                ? `${catalog.description.substring(0, 50)}${catalog.description.length > 50 ? '...' : ''}`
+                                : 'Aucune description'}
+                        </p>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>{catalog.description}</p>
+                        <p>{catalog.description || 'Aucune description'}</p>
                     </TooltipContent>
                 </Tooltip>
 
