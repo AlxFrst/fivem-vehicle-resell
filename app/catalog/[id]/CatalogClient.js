@@ -20,12 +20,17 @@ export default function CatalogClient({ catalog }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [showSoldVehicles, setShowSoldVehicles] = useState(false);
     const vehiclesPerPage = 9;
+    const [enlargedVehicle, setEnlargedVehicle] = useState(null);
 
     const handleReserve = (vehicle) => {
         setSelectedVehicle(vehicle);
         setIsReserving(true);
     };
 
+    const handleImageClick = (vehicle) => {
+        setEnlargedVehicle(vehicle);
+    };
+    
     const handleSubmitReservation = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -112,7 +117,7 @@ export default function CatalogClient({ catalog }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {currentVehicles.map(vehicle => (
                     <Card key={vehicle.id} className={`overflow-hidden ${vehicle.status === 'sold' ? 'opacity-70' : ''}`}>
-                        <div className="relative aspect-[16/9] overflow-hidden">
+                        <div className="relative aspect-[16/9] overflow-hidden" onClick={() => handleImageClick(vehicle)}>
                             <Image
                                 src={`data:image/jpeg;base64,${Buffer.from(vehicle.image).toString('base64')}`}
                                 alt={`${vehicle.brand} ${vehicle.model}`}
@@ -170,6 +175,45 @@ export default function CatalogClient({ catalog }) {
                 <h2 className="text-2xl font-semibold mb-4">Contact</h2>
                 <p>{catalog.contactInfo}</p>
             </div>
+
+            <Dialog open={enlargedVehicle !== null} onOpenChange={() => setEnlargedVehicle(null)}>
+                <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>{enlargedVehicle?.brand} {enlargedVehicle?.model}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="relative aspect-video">
+                            {enlargedVehicle && (
+                                <Image
+                                    src={`data:image/jpeg;base64,${Buffer.from(enlargedVehicle.image).toString('base64')}`}
+                                    alt={`${enlargedVehicle?.brand} ${enlargedVehicle?.model}`}
+                                    layout="fill"
+                                    objectFit="contain"
+                                />
+                            )}
+                        </div>
+                        <div className="flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Détails du véhicule</h3>
+                                <p><strong>Prix:</strong> {enlargedVehicle?.price}€</p>
+                                <p><strong>Kilométrage:</strong> {enlargedVehicle?.mileage} km</p>
+                                <p><strong>Catégorie:</strong> {enlargedVehicle?.category}</p>
+                                <p><strong>Statut:</strong> {enlargedVehicle?.status === 'sold' ? 'Vendu' : 'Disponible'}</p>
+                                <p className="mt-4"><strong>Description:</strong></p>
+                                <p>{enlargedVehicle?.description}</p>
+                            </div>
+                            <div className="mt-4">
+                                <Badge variant={enlargedVehicle?.status === 'sold' ? "secondary" : "default"}>
+                                    {enlargedVehicle?.status === 'sold' ? "Vendu" : "Disponible"}
+                                </Badge>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setEnlargedVehicle(null)}>Fermer</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={isReserving} onOpenChange={setIsReserving}>
                 <DialogContent>
