@@ -177,41 +177,39 @@ export default function CatalogClient({ catalog }) {
             </div>
 
             <Dialog open={enlargedVehicle !== null} onOpenChange={() => setEnlargedVehicle(null)}>
-                <DialogContent className="max-w-4xl">
-                    <DialogHeader>
-                        <DialogTitle>{enlargedVehicle?.brand} {enlargedVehicle?.model}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="relative aspect-video">
+                <DialogContent className="max-w-5xl p-0 overflow-hidden bg-white rounded-lg shadow-xl">
+                    <div className="flex flex-col md:flex-row">
+                        <div className="relative w-full md:w-1/2 aspect-video">
                             {enlargedVehicle && (
                                 <Image
                                     src={`data:image/jpeg;base64,${Buffer.from(enlargedVehicle.image).toString('base64')}`}
                                     alt={`${enlargedVehicle?.brand} ${enlargedVehicle?.model}`}
                                     layout="fill"
-                                    objectFit="contain"
+                                    objectFit="cover"
+                                    className="rounded-t-lg md:rounded-l-lg md:rounded-t-none"
                                 />
                             )}
                         </div>
-                        <div className="flex flex-col justify-between">
+                        <div className="w-full md:w-1/2 p-6 flex flex-col justify-between bg-gray-50">
                             <div>
-                                <h3 className="text-lg font-semibold mb-2">Détails du véhicule</h3>
-                                <p><strong>Prix:</strong> {enlargedVehicle?.price}€</p>
-                                <p><strong>Kilométrage:</strong> {enlargedVehicle?.mileage} km</p>
-                                <p><strong>Catégorie:</strong> {enlargedVehicle?.category}</p>
-                                <p><strong>Statut:</strong> {enlargedVehicle?.status === 'sold' ? 'Vendu' : 'Disponible'}</p>
-                                <p className="mt-4"><strong>Description:</strong></p>
-                                <p>{enlargedVehicle?.description}</p>
+                                <DialogHeader>
+                                    <DialogTitle className="text-3xl font-bold text-gray-900">{enlargedVehicle?.brand} {enlargedVehicle?.model}</DialogTitle>
+                                </DialogHeader>
+                                <div className="mt-4 space-y-2">
+                                    <p className="text-2xl font-semibold text-gray-900">{enlargedVehicle?.price}€</p>
+                                    <p className="text-sm text-gray-600"><span className="font-medium">Kilométrage:</span> {enlargedVehicle?.mileage} km</p>
+                                    <p className="text-sm text-gray-600"><span className="font-medium">Catégorie:</span> {enlargedVehicle?.category}</p>
+                                    <Badge className="mt-2" variant={enlargedVehicle?.status === 'sold' ? "secondary" : "default"}>
+                                        {enlargedVehicle?.status === 'sold' ? "Vendu" : "Disponible"}
+                                    </Badge>
+                                    <p className="mt-4 text-sm text-gray-600">{enlargedVehicle?.description}</p>
+                                </div>
                             </div>
-                            <div className="mt-4">
-                                <Badge variant={enlargedVehicle?.status === 'sold' ? "secondary" : "default"}>
-                                    {enlargedVehicle?.status === 'sold' ? "Vendu" : "Disponible"}
-                                </Badge>
-                            </div>
+                            <DialogFooter className="mt-6">
+                                <Button onClick={() => setEnlargedVehicle(null)} className="w-full">Fermer</Button>
+                            </DialogFooter>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button onClick={() => setEnlargedVehicle(null)}>Fermer</Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
