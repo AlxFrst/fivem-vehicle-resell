@@ -20,6 +20,8 @@ model User {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  collaborations CatalogCollaborator[]
 }
 
 model Catalog {
@@ -36,6 +38,8 @@ model Catalog {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  collaborators CatalogCollaborator[]
 }
 
 model Category {
@@ -79,6 +83,20 @@ model Reservation {
   status      String   @default("pending")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model CatalogCollaborator {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  catalogId String
+  catalog   Catalog  @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+  role      String   // Par exemple : "editor", "viewer"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, catalogId])
 }
 
 model Account {

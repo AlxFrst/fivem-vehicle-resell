@@ -203,19 +203,75 @@ export default async function CatalogDashboardPage({ params }) {
         deleteVehicle={deleteVehicle}
         acceptReservation={acceptReservation}
         rejectReservation={rejectReservation}
+        addCollaborator={addCollaborator}
+        removeCollaborator={removeCollaborator}
+        searchUsers={searchUsers}
     />;
+}
+
+async function addCollaborator(catalogId, email, role) {
+    'use server'
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+        throw new Error("Utilisateur non trouvé");
+    }
+
+    await prisma.catalogCollaborator.create({
+        data: {
+            userId: user.id,
+            catalogId,
+            role
+        }
+    });
+
+    revalidatePath(`/catalog-dashboard/${catalogId}`);
+}
+
+async function removeCollaborator(collaboratorId) {
+    'use server'
+    const collaborator = await prisma.catalogCollaborator.delete({
+        where: { id: collaboratorId }
+    });
+
+    revalidatePath(`/catalog-dashboard/${collaborator.catalogId}`);
+}
+
+async function searchUsers(email) {
+    'use server'
+    const users = await prisma.user.findMany({
+        where: {
+            email: {
+                contains: email,
+                mode: 'insensitive', // Ceci rend la recherche insensible à la casse
+            },
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+        },
+        take: 5, // Limite le nombre de résultats à 5
+    });
+    return users;
 }
 
 async function getCatalog(id, userId) {
     return prisma.catalog.findFirst({
-        where: { id, userId },
+        where: {
+            id,
+            OR: [
+                { userId },
+                { collaborators: { some: { userId } } }
+            ]
+        },
         select: {
             id: true,
             name: true,
             serverName: true,
             description: true,
             contactInfo: true,
-            webhookUrl: true,  // Include the new webhookUrl field
+            webhookUrl: true,
+            userId: true,
             categories: {
                 include: {
                     vehicles: true
@@ -227,6 +283,17 @@ async function getCatalog(id, userId) {
                 },
                 orderBy: {
                     createdAt: 'desc'
+                }
+            },
+            collaborators: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
                 }
             }
         },

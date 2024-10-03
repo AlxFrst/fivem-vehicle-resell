@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CollaboratorsModal } from './CollaboratorsModal';
 
 export default function CatalogDashboardClient({
     catalog,
@@ -24,7 +25,11 @@ export default function CatalogDashboardClient({
     deleteVehicle,
     acceptReservation,
     rejectReservation,
+    addCollaborator,
+    removeCollaborator,
+    searchUsers,
 }) {
+    const [isCollaboratorsModalOpen, setIsCollaboratorsModalOpen] = useState(false);
     const [isEditingCatalog, setIsEditingCatalog] = useState(false);
     const [isAddingCategory, setIsAddingCategory] = useState(false);
     const [isAddingVehicle, setIsAddingVehicle] = useState(false);
@@ -157,6 +162,7 @@ export default function CatalogDashboardClient({
                     <CardContent className="flex flex-col space-y-2">
                         <Button onClick={() => setIsAddingVehicle(true)}>Ajouter un véhicule</Button>
                         <Button variant="outline">Exporter les données</Button>
+                        <Button onClick={() => setIsCollaboratorsModalOpen(true)}>Gérer les collaborateurs</Button>
                     </CardContent>
                 </Card>
 
@@ -185,6 +191,14 @@ export default function CatalogDashboardClient({
                 setIsOpen={setIsDeletingCategory}
                 selectedCategory={selectedCategory}
                 deleteCategory={deleteCategory}
+            />
+            <CollaboratorsModal
+                isOpen={isCollaboratorsModalOpen}
+                setIsOpen={setIsCollaboratorsModalOpen}
+                catalog={catalog}
+                addCollaborator={addCollaborator}
+                removeCollaborator={removeCollaborator}
+                searchUsers={searchUsers}
             />
         </div>
     );
@@ -362,6 +376,7 @@ const Categories = ({ categories, setSelectedCategory, setIsDeletingCategory, se
         <Button onClick={() => setIsAddingCategory(true)} className="w-full">Ajouter une catégorie</Button>
     </>
 );
+
 
 const VehicleList = ({ availableVehicles, soldVehicles, handleSellVehicle, updateVehicleStatus }) => (
     <Tabs defaultValue="available">
