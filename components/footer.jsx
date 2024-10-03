@@ -31,7 +31,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-gray-200 mt-8 pt-8 text-center">
-          <p className="text-sm text-gray-600">&copy; 2023 CarVentory. Tous droits réservés.</p>
+          <p className="text-sm text-gray-600">&copy; 2024 CarVentory. Tous droits réservés. Made with ❤️ by Alx</p>
         </div>
       </div>
     </footer>
